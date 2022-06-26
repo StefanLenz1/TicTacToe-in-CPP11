@@ -8,8 +8,13 @@ bool activateComDelay = true; // Vor jedem Com Zug wird etwa 1 Sekunde gewartet
 #include <thread>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
-using namespace std;
+using std::cout;
+using std::cin;
+using std::vector;
+using std::endl;
+using std::string;
 
 typedef struct MoveStruct // Nur für minimax
 {
@@ -18,6 +23,7 @@ typedef struct MoveStruct // Nur für minimax
 } moveStruct;
 
 const char emptyField = ' '; // Ein Leerzeichen
+const int fieldSize = 9;
 
 int (*setDifficulty(string difficulty))(int);
 int getMovePlayer(int recentMove);
@@ -33,7 +39,7 @@ bool checkWinner(int recentMove, int player);
 bool checkInput(char input[]);
 void displayGraph(char recentPlayer);
 
-char tictactoeField[9]; // Jedes Element zu 0 initiieren. 0 ist Leer, 1 ist O and 2 ist X, ? ist ein Error
+char tictactoeField[fieldSize]; // Jedes Element zu 0 initiieren. 0 ist Leer, 1 ist O and 2 ist X, ? ist ein Error
 /* Tictactoe Feld
     012
     345
@@ -55,12 +61,10 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    srand(time(NULL));
-
-    for (int i = 0; i < 9; i++)
-        tictactoeField[i] = emptyField;
+    std::fill_n(tictactoeField, fieldSize, emptyField);
     int movePlayer1, movePlayer2;
     char winner;
+    srand(time(NULL));
 
     int recentMove = -1;   // Auserhalb des Feldes
     char nextPlayer = 'O'; // X fängt immer an
@@ -137,7 +141,7 @@ int getMoveComEasy(int recentMove) // Feldauswahl durch reinen Zufall
 {
     if (activateComDelay)
     {
-        this_thread::sleep_for(chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     vector <int> remainingFields = getRemainingFields();
@@ -150,7 +154,7 @@ int getMoveComHard(int recentMove) // Feldauswahl durch Minimax
 {
     if (activateComDelay)
     {
-        this_thread::sleep_for(chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     moveStruct move = findBestMoveMinimax(recentMove, true);
@@ -254,7 +258,7 @@ bool checkWinner(int recentMove, int player)
 {
     const int collumn = recentMove / 3;
     const int row = recentMove % 3;
-    int checkTictactoe[3][3] = {};
+    int checkTictactoe[3][3] {0};
 
     for (int i = 0; i < 3; i++)
     {
@@ -290,23 +294,16 @@ bool checkInput(char input[])
     const int amountRemainingFields = remainingFields.size();
     input[0] = toupper(input[0]);
 
+    /* Testet ob das Input-Format richtig ist*/
     if (!isalpha(input[0]) || !isdigit(input[1]) || (input[1] > '3') || input[1] == '0' || input[0] > 'C')
     {
         cout << "Ungültiger Eingabe" << endl;
         return true;
     }
 
+    /* Testet ob das Feld Belegt ist*/
     const int inputHash = (input[0] - 'A') * 3 + input[1] - '1';
-    bool fieldIsTaken = true;
-
-    for (int i = 0; i < amountRemainingFields; i++) // Testet ob Feld belegt ist
-    {
-        if (inputHash == remainingFields.at(i))
-        {
-            fieldIsTaken = false;
-        }
-    }
-    if (fieldIsTaken)
+    if(std::find(remainingFields.begin(), remainingFields.end(), inputHash) == remainingFields.end())
     {
         cout << "Belegtes Feld" << endl;
         return true;
